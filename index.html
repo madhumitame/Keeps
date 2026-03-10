@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keeps</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <style>
+    html {
+      overflow-y: scroll;
+    }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      margin: 0;
+      background: #000000;
+      color: #ffffff;
+    }
+    header {
+      background: #000000;
+      color: #ffffff;
+      padding: 1rem;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+    main { padding: 1rem; }
+    .card {
+      background: #111111;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 10px rgba(255,255,255,0.05);
+    }
+    h1, h3, p { color: #ffffff; }
+    input, select, button {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  background: none;
+  color: inherit;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-family: "Times New Roman", serif;
+}
+
+button {
+  border: 1px solid rgba(255,255,255,0.4);
+  background: none;
+}
+    ul { padding-left: 1rem; }
+    li { margin-bottom: 0.4rem; }
+  </style>
+</head>
+<body>
+  <header id="mainHeader" style="display:none; padding:1rem; text-align:left;">
+    <button onclick="goHome()" style="background:none;color:white;border:none;font-size:1rem;font-family:'Times New Roman',serif;">← Back</button>
+  </header>
+
+  <div id="welcome" style="padding:3rem;text-align:center;">
+    <h1 style="font-weight:400;">Welcome to Keeps</h1>
+    <p style="opacity:0.6; margin-top:0.5rem;">Things worth keeping in your lil home.</p>
+    <div style="margin-top:3rem; display:flex; flex-direction:column; gap:1.2rem;">
+      <button onclick="navigate('Movie')">Home Theatre</button>
+      <button onclick="navigate('Book')">Library</button>
+      <button onclick="navigate('Place')">Helipad</button>
+      <button onclick="navigate('Dish')">Kitchen</button>
+    </div>
+  </div>
+
+  <main id="app" style="display:none; padding:1.5rem;">
+    <h2 id="sectionTitle" style="font-weight:400; margin-bottom:1.5rem;"></h2>
+    <div class="card">
+      <select id="type" style="display:none;"></select>
+      <input id="title" placeholder="Title / Name" />
+      <input id="date" type="date" />
+      <input id="rating" type="number" min="1" max="5" placeholder="Rating (1–5)" />
+      <input id="notes" placeholder="Notes" />
+      <input id="image" type="file" accept="image/*" />
+      <button onclick="addItem()">Add</button>
+    </div>
+
+    <div class="card">
+      <ul id="list"></ul>
+      <p id="savedFeedback" style="display:none; opacity:0.6; font-size:0.9rem; margin-top:0.5rem;">Saved</p>
+    </div>
+  </main>
+  
+  <div style="
+    text-align:center;
+    font-size:0.75rem;
+    opacity:0.5;
+    margin-top:1.5rem;
+  ">
+	<a href="https://buymeacoffee.com/Menon" target="_blank" 			style="color:inherit; text-decoration:none;">
+      ☕ Keep Keeps going ☕️
+    </a>
+  </div>
+  
+  <section style="
+  max-width:640px;
+  margin:2rem auto;
+  padding:0 1.5rem;
+  font-size:0.85rem;
+  opacity:0.7;
+  line-height:1.6;
+">
+  <p>
+    <strong>Keeps</strong> is a quiet personal catalog for recording
+    books, films, places, and everyday moments worth remembering.
+  </p>
+</section>
+
+  <footer style="
+    text-align:center;
+    font-size:0.75rem;
+    opacity:0.5;
+    padding:0.75rem 0 1rem;
+  ">
+    Keeps
+    <a href="privacy.html" style="color:inherit; opacity:0.5; font-size:0.7rem;">
+  Privacy
+</a>
+
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    const list = document.getElementById('list');
+    const items = JSON.parse(localStorage.getItem('catalog') || '[]');
+
+    function navigate(section) {
+      const titles = {
+        Movie: 'Movies',
+        Book: 'Books',
+        Place: 'Places',
+        Dish: 'Dishes'
+      };
+      document.getElementById('sectionTitle').textContent = titles[section] || section;
+      document.getElementById('welcome').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('mainHeader').style.display = 'block';
+
+      const typeSelect = document.getElementById('type');
+      typeSelect.innerHTML = `<option>${section}</option>`;
+      render(section);
+    }
+
+    function goHome() {
+      document.getElementById('welcome').style.display = 'block';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('mainHeader').style.display = 'none';
+    }
+
+    function render(filterType) {
+      list.innerHTML = '';
+      items
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => !filterType || item.type === filterType)
+        .forEach(({ item, index }) => {
+          const li = document.createElement('li');
+          li.style.marginBottom = '1.5rem';
+          li.innerHTML = `<strong>${item.title}</strong><br>
+            <span style="opacity:0.7;">${item.date || ''}</span><br>
+            ${item.rating ? `Rating: ${item.rating}/5<br>` : ''}
+            ${item.notes ? `<em>${item.notes}</em><br>` : ''}
+            ${item.image ? `<img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:8px;"/>` : ''}
+            <div style="margin-top:0.5rem; display:flex; gap:1rem;">
+              <button onclick="editItem(${index})" style="background:none;color:#4f46e5;border:none;">Edit</button>
+              <button onclick="deleteItem(${index})" style="background:none;color:#6b7280;border:none;">Delete</button>
+            </div>`;
+          list.appendChild(li);
+        });
+      localStorage.setItem('catalog', JSON.stringify(items));
+    }
+
+    function addItem() {
+      const type = document.getElementById('type').value;
+      const titleInput = document.getElementById('title');
+      const dateInput = document.getElementById('date');
+      const ratingInput = document.getElementById('rating');
+      const notesInput = document.getElementById('notes');
+      const imageInput = document.getElementById('image');
+
+      const title = titleInput.value;
+      const date = dateInput.value;
+      const rating = ratingInput.value;
+      const notes = notesInput.value;
+      const file = imageInput.files[0];
+      if (!title) return;
+
+      const clearInputs = () => {
+        titleInput.value = '';
+        dateInput.value = '';
+        ratingInput.value = '';
+        notesInput.value = '';
+        imageInput.value = '';
+      };
+
+      const showSaved = () => {
+        const msg = document.getElementById('savedFeedback');
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 1200);
+      };
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          items.push({ type, title, date, rating, notes, image: reader.result });
+          render(type);
+          clearInputs();
+          showSaved();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        items.push({ type, title, date, rating, notes });
+        render(type);
+        clearInputs();
+        showSaved();
+      }
+    }
+
+    function deleteItem(index) {
+      if (!confirm('Delete this item?')) return;
+      items.splice(index, 1);
+      render(document.getElementById('type').value);
+    }
+
+    function editItem(index) {
+      const item = items[index];
+      document.getElementById('title').value = item.title;
+      document.getElementById('date').value = item.date || '';
+      document.getElementById('rating').value = item.rating || '';
+      document.getElementById('notes').value = item.notes || '';
+      deleteItem(index);
+    }
+  </script>
+</body>
+</html>
+

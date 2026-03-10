@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-app-v1.2.0';
+const CACHE_NAME = 'life-app-v2.0';
 const FILES_TO_CACHE = [
   '/',
   '/index.html'
